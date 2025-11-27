@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroberi Catcher - Permainan Pink</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* --- Tema Pink & Stroberi --- */
+        body {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border: 3px solid #ffc0cb;
+        }
+
+        h1 {
+            color: #d63384;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+
+        .stats-panel {
+            background-color: #fff0f5;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #ffb6c1;
+        }
+
+        .stat-item {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #c7366f;
+        }
+
+        /* --- Area Permainan --- */
+        #gameArea {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(to bottom, #87ceeb, #f0f8ff);
+            border: 4px solid #ff69b4;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden; /* Penting agar item tidak keluar */
+            cursor: none; /* Sembunyikan kursor default */
+        }
+
+        /* --- Pemain (Keranjang) --- */
+        #player {
+            position: absolute;
+            bottom: 10px;
+            width: 80px;
+            height: 80px;
+            font-size: 60px;
+            text-align: center;
+            transition: left 0.05s linear; /* Agar gerakan mulus */
+        }
+
+        /* --- Item yang Jatuh --- */
+        .falling-item {
+            position: absolute;
+            font-size: 40px;
+            width: 40px;
+            text-align: center;
+        }
+
+        /* --- Tombol Kustom --- */
+        .btn-pink {
+            background-color: #e83e8c;
+            border-color: #d63384;
+            color: white;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-pink:hover {
+            background-color: #d63384;
+            border-color: #c7366f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        /* --- Modal Game Over --- */
+        .modal-content {
+            border-radius: 15px;
+            border: 3px solid #ffb6c1;
+        }
+        .modal-header {
+            background-color: #f8d7da;
+            border-bottom: 2px solid #f5c6cb;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-title {
+            color: #721c24;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container game-container">
+        <div class="text-center">
+            <h1><i class="bi bi-heart-fill text-danger"></i> selamat datang di strawberi elsa <i class="bi bi-heart-fill text-danger"></i></h1>
+            <p class="lead text-muted">Gerakkan mouse untuk menangkap stroberi dan hindari cacing!</p>
+        </div>
+
+        <div class="row stats-panel">
+            <div class="col-4 text-center">
+                <i class="bi bi-trophy-fill text-warning"></i>
+                <span class="stat-item">Skor: <span id="score">0</span></span>
+            </div>
+            <div class="col-4 text-center">
+                <i class="bi bi-heart-fill text-danger"></i>
+                <span class="stat-item">Nyawa: <span id="lives">3</span></span>
+            </div>
+            <div class="col-4 text-center">
+                 <i class="bi bi-lightning-fill text-primary"></i>
+                <span class="stat-item">Level: <span id="level">1</span></span>
+            </div>
+        </div>
+
+        <div id="gameArea">
+            <!-- Pemain akan ditambahkan di sini oleh JavaScript -->
+            <div id="player">🧺</div>
+        </div>
+
+        <div class="text-center mt-3">
+            <button id="startBtn" class="btn btn-pink btn-lg px-5">
+                <i class="bi bi-play-fill"></i> Mulai Permainan
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Game Over -->
+    <div class="modal fade" id="gameOverModal" tabindex="-1" aria-labelledby="gameOverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="gameOverModalLabel"><i class="bi bi-emoji-frown-fill"></i> Permainan Selesai!</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="fs-4">Skor Akhir Anda:</p>
+                    <p class="display-4 text-danger fw-bold" id="finalScore">0</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" id="restartBtn" class="btn btn-pink">
+                        <i class="bi bi-arrow-clockwise"></i> Main Lagi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- Variabel Global ---
+        const gameArea = document.getElementById('gameArea');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const levelDisplay = document.getElementById('level');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const gameOverModal = new bootstrap.Modal(document.getElementById('gameOverModal'));
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let playerX = gameArea.offsetWidth / 2 - 40; // Posisi awal pemain di tengah
+        let fallingItems = [];
+        let gameInterval;
+        let spawnInterval;
+        let level = 1;
+        let spawnSpeed = 2000; // Kecepatan muncul item (ms)
+        let fallSpeed = 3; // Kecepatan jatuh item (px)
+
+        // --- Event Listener ---
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', () => {
+            gameOverModal.hide();
+            startGame();
+        });
+
+        // Gerakkan pemain dengan mouse
+        gameArea.addEventListener('mousemove', (e) => {
+            if (!gameActive) return;
+            const rect = gameArea.getBoundingClientRect();
+            playerX = e.clientX - rect.left - (player.offsetWidth / 2);
+            
+            // Batasi gerakan pemain agar tidak keluar area
+            if (playerX < 0) playerX = 0;
+            if (playerX > gameArea.offsetWidth - player.offsetWidth) {
+                playerX = gameArea.offsetWidth - player.offsetWidth;
+            }
+            player.style.left = playerX + 'px';
+        });
+
+        // --- Fungsi Utama Permainan ---
+        function startGame() {
+            // Reset variabel
+            score = 0;
+            lives = 3;
+            level = 1;
+            spawnSpeed = 2000;
+            fallSpeed = 3;
+            gameActive = true;
+            fallingItems = [];
+            
+            // Hapus item yang tersisa
+            document.querySelectorAll('.falling-item').forEach(item => item.remove());
+            
+            // Update tampilan
+            updateDisplay();
+            startBtn.disabled = true;
+            startBtn.textContent = 'Sedang Bermain...';
+            
+            // Mulai loop permainan
+            gameInterval = setInterval(gameLoop, 20); // Loop utama untuk animasi
+            spawnInterval = setInterval(spawnItem, spawnSpeed); // Loop untuk memunculkan item
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            // Update level setiap 100 poin
+            if (score > 0 && score % 100 === 0) {
+                level = Math.floor(score / 100) + 1;
+                fallSpeed = 3 + (level - 1) * 0.5; // Percepat jatuh
+                spawnSpeed = Math.max(800, 2000 - (level - 1) * 200); // Percepat muncul
+                clearInterval(spawnInterval);
+                spawnInterval = setInterval(spawnItem, spawnSpeed);
+                levelDisplay.textContent = level;
+            }
+
+            // Gerakkan semua item yang jatuh
+            fallingItems.forEach((item, index) => {
+                item.element.style.top = item.y + 'px';
+                item.y += fallSpeed;
+
+                // Cek tabrakan dengan pemain
+                if (checkCollision(item.element, player)) {
+                    handleCatch(item);
+                    return; // Lanjut ke item berikutnya
+                }
+
+                // Cek jika item jatuh ke bawah
+                if (item.y > gameArea.offsetHeight) {
+                    if (item.type === 'strawberry') {
+                        // Jika stroberi jatuh, kurangi nyawa
+                        lives--;
+                        updateDisplay();
+                        if (lives <= 0) {
+                            endGame();
+                        }
+                    }
+                    // Hapus item dari array dan DOM
+                    item.element.remove();
+                    fallingItems.splice(index, 1);
+                }
+            });
+        }
+
+        function spawnItem() {
+            if (!gameActive) return;
+
+            const item = document.createElement('div');
+            item.classList.add('falling-item');
+            
+            // Acak apakah yang muncul stroberi atau cacing (70% stroberi, 30% cacing)
+            const isStrawberry = Math.random() > 0.3;
+            const itemType = isStrawberry ? 'strawberry' : 'worm';
+            item.textContent = isStrawberry ? '🍓' : '🐛';
+
+            // Posisi acak di atas
+            const randomX = Math.random() * (gameArea.offsetWidth - 40);
+            item.style.left = randomX + 'px';
+            item.style.top = '0px';
+
+            gameArea.appendChild(item);
+
+            fallingItems.push({
+                element: item,
+                y: 0,
+                type: itemType
+            });
+        }
+
+        function checkCollision(item1, item2) {
+            const rect1 = item1.getBoundingClientRect();
+            const rect2 = item2.getBoundingClientRect();
+
+            return !(rect1.right < rect2.left || 
+                     rect1.left > rect2.right || 
+                     rect1.bottom < rect2.top || 
+                     rect1.top > rect2.bottom);
+        }
+
+        function handleCatch(item) {
+            if (item.type === 'strawberry') {
+                score += 10;
+            } else {
+                lives--;
+                if (lives <= 0) {
+                    endGame();
+                }
+            }
+            
+            updateDisplay();
+            
+            // Hapus item yang tertangkap
+            const index = fallingItems.indexOf(item);
+            if (index > -1) {
+                fallingItems.splice(index, 1);
+            }
+            item.element.remove();
+        }
+
+        function updateDisplay() {
+            scoreDisplay.textContent = score;
+            livesDisplay.textContent = lives;
+            levelDisplay.textContent = level;
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            clearInterval(spawnInterval);
+            
+            finalScoreDisplay.textContent = score;
+            gameOverModal.show();
+            
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-play-fill"></i> Mulai Permainan';
+        }
+    </script>
+</body>
+</html>
